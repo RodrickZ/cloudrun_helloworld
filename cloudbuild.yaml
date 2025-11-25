@@ -21,11 +21,11 @@ steps:
     args:
       - 'run'
       - 'deploy'
-      - 'hello-world-app'
+      - 'test'
       - '--image'
       - 'gcr.io/$PROJECT_ID/hello-world-app:${SHORT_SHA}'
       - '--region'
-      - 'asia-east1'
+      - 'asia-southeast1'
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
