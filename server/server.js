@@ -54,6 +54,50 @@ const proxyLimiter = rateLimit({
 // Apply the rate limiter to the /api-proxy route before the main proxy logic
 app.use('/api-proxy', proxyLimiter);
 
+// --- Connectivity Test Route ---
+const net = require('net');
+app.get('/test-vm', (req, res) => {
+    const host = '10.148.0.3'; // VM 的内部 IP
+    const port = 22;           // 尝试连接 SSH 端口
+    const timeout = 3000;      // 3秒超时
+
+    console.log(`Testing connectivity to ${host}:${port}...`);
+    
+    // 设置响应头，支持流式输出
+    res.setHeader('Content-Type', 'text/plain');
+    res.write(`Starting connectivity test to ${host}:${port}...\n`);
+
+    const socket = new net.Socket();
+    socket.setTimeout(timeout);
+
+    socket.on('connect', () => {
+        const msg = '✅ SUCCESS: Connection established! Cloud Run can reach the VM.';
+        console.log(msg);
+        res.write(msg + '\n');
+        socket.destroy();
+        res.end();
+    });
+
+    socket.on('timeout', () => {
+        const msg = '❌ FAILED: Connection timed out. Check firewall rules.';
+        console.error(msg);
+        res.write(msg + '\n');
+        socket.destroy();
+        res.end();
+    });
+
+    socket.on('error', (err) => {
+        const msg = `❌ FAILED: Connection error: ${err.message}`;
+        console.error(msg);
+        res.write(msg + '\n');
+        socket.destroy();
+        res.end();
+    });
+
+    socket.connect(port, host);
+});
+// -------------------------------
+
 // Proxy route for Gemini API calls (HTTP)
 app.use('/api-proxy', async (req, res, next) => {
     console.log(req.ip);
